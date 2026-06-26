@@ -1,0 +1,86 @@
+{
+  "issues": [
+    {
+      "body": "API p95 rose after the rate limit burst-window change. Ask the bot to correlate this with recent changes and recommend patch or revert from the runbook.",
+      "labels": [
+        "incident",
+        "sev2"
+      ],
+      "title": "Incident: elevated 429s after team-plan deploy"
+    },
+    {
+      "body": "Discord prompt should answer how `allowedRequests` combines base allowance and burst allowance, citing `src/rateLimiter.ts`.",
+      "labels": [
+        "codebase-qna"
+      ],
+      "title": "Codebase Q&A: explain rate limit defaults"
+    },
+    {
+      "body": "Post-incident action item from INC-2026-06-24. Track free/team/enterprise quota graphs in one dashboard.",
+      "labels": [
+        "incident"
+      ],
+      "title": "Follow-up: add per-plan quota dashboard"
+    }
+  ],
+  "labels": [
+    {
+      "color": "b60205",
+      "description": "Incident or operational follow-up",
+      "name": "incident"
+    },
+    {
+      "color": "d73a4a",
+      "description": "Customer-visible degradation",
+      "name": "sev2"
+    },
+    {
+      "color": "0e8a16",
+      "description": "Patch mitigation",
+      "name": "patch"
+    },
+    {
+      "color": "fbca04",
+      "description": "Revert candidate",
+      "name": "revert"
+    },
+    {
+      "color": "5319e7",
+      "description": "Question about implementation details",
+      "name": "codebase-qna"
+    }
+  ],
+  "organization": "MyCoolOrg123",
+  "pull_requests": [
+    {
+      "body": "Patch mitigation for elevated 429s. Reduces the team burst window and updates the incident note.",
+      "branch": "patch/tighten-team-burst-window",
+      "changes": {
+        "incidents/INC-2026-06-24-api-latency.md": "# INC-2026-06-24 API Latency\n\n## Summary\n\nAPI p95 latency rose from 220 ms to 1.8 s after the queue backoff change merged.\nError rate stayed below 1 percent, but Discord command interactions timed out for\nroughly 18 percent of requests.\n\n## Suspect changes\n\n- `9f4a2c1` adjusted queue retry backoff.\n- `52c8dd0` changed team-plan rate limit burst windows.\n- `a81bb12` updated dashboard sampling intervals.\n\n## Decision\n\nPatch burst-window calculation first. Revert queue backoff only if p95 remains above\n750 ms after the patch deploy.\n\n## Patch proposal\n\nReduce the team burst window from 15 seconds to 10 seconds and watch p95 for 30 minutes.\n",
+        "src/rateLimiter.ts": "export interface RateLimitPlan {\n  name: \"free\" | \"team\" | \"enterprise\";\n  requestsPerMinute: number;\n  burstWindowSeconds: number;\n}\n\nexport const plans: Record<RateLimitPlan[\"name\"], RateLimitPlan> = {\n  free: { name: \"free\", requestsPerMinute: 60, burstWindowSeconds: 10 },\n  team: { name: \"team\", requestsPerMinute: 600, burstWindowSeconds: 10 },\n  enterprise: { name: \"enterprise\", requestsPerMinute: 3000, burstWindowSeconds: 30 },\n};\n\nexport function allowedRequests(plan: RateLimitPlan, elapsedSeconds: number): number {\n  const baseAllowance = Math.floor((plan.requestsPerMinute / 60) * elapsedSeconds);\n  const burstAllowance = Math.ceil(plan.requestsPerMinute * (plan.burstWindowSeconds / 60));\n\n  return Math.max(baseAllowance, burstAllowance);\n}\n\nexport function shouldThrottle(plan: RateLimitPlan, elapsedSeconds: number, observed: number): boolean {\n  return observed > allowedRequests(plan, elapsedSeconds);\n}\n"
+      },
+      "draft": false,
+      "title": "Tighten team-plan burst window"
+    },
+    {
+      "body": "Draft revert path if the burst-window patch does not reduce p95 below 750 ms.",
+      "branch": "revert/queue-backoff-change",
+      "changes": {
+        "runbooks/queue-backoff-revert.md": "# Queue Backoff Revert\n\nUse only if p95 remains above 750 ms after the burst-window patch.\nRevert the queue retry backoff change, deploy to one cell, and monitor\nDiscord interaction timeout rate for 15 minutes.\n"
+      },
+      "draft": true,
+      "title": "Prepare queue backoff revert"
+    }
+  ],
+  "repository": {
+    "description": "Private dev-team demo for incident response, codebase Q&A, alert correlation, and patch PRs.",
+    "name": "incident-command-center",
+    "topics": [
+      "discord",
+      "incident-response",
+      "sdlc",
+      "coderabbit-demo"
+    ],
+    "visibility": "private"
+  }
+}
