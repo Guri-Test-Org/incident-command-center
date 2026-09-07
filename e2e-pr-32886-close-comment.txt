@@ -1,2 +1,2 @@
-Disposable E2E fixture for coderabbitai/mono#32886.
-Expected result: Triage posts a required comment and closes this PR.
+Disposable Hutch E2E fixture for coderabbitai/mono#32886.
+Preview app installed; synchronization event emitted on 2026-09-07.
