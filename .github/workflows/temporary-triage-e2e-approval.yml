@@ -1,27 +1,36 @@
-name: Temporary Triage E2E approval
+name: Temporary Triage E2E pull request
 
 on:
   workflow_dispatch:
-    inputs:
-      pull_request:
-        description: Pull request number to approve
-        required: true
-        type: string
-
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
-  approve:
+  create-pull-request:
     runs-on: ubuntu-latest
     steps:
-      - name: Approve the disposable test pull request
+      - uses: actions/checkout@v4
+      - name: Create the disposable bot-authored pull request
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ inputs.pull_request }}
         run: |
-          gh pr review "$PR_NUMBER" \
+          branch="actions/triage-merge-e2e-${GITHUB_RUN_ID}"
+          git switch -c "$branch"
+          mkdir -p e2e
+          printf '%s\n' \
+            '# Hutch Triage merge E2E' \
+            '' \
+            'Disposable fixture authored by github-actions[bot].' \
+            > "e2e/triage-merge-${GITHUB_RUN_ID}.md"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add e2e
+          git commit -m "test: add bot-authored triage merge fixture"
+          git push origin "$branch"
+          gh pr create \
             --repo "$GITHUB_REPOSITORY" \
-            --approve \
-            --body "Temporary approval for the Hutch Triage Merge CTA E2E test."
+            --head "$branch" \
+            --base main \
+            --title "[E2E] Bot-authored Triage merge preflight" \
+            --body "Disposable public PR for testing the Hutch Triage Merge CTA."
