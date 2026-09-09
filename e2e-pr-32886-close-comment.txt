@@ -1,0 +1,2 @@
+Disposable E2E fixture for coderabbitai/mono#32886.
+Expected result: Triage posts a required comment and closes this PR.
