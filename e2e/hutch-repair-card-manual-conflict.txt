@@ -1,0 +1,1 @@
+head-side value for the Hutch repair polling conflict fixture
