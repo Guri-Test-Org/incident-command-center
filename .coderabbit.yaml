@@ -3,5 +3,5 @@ reviews:
   profile: assertive
   request_changes_workflow: false
   auto_review:
-    enabled: true
+    enabled: false
     drafts: false

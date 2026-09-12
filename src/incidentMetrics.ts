@@ -12,3 +12,6 @@ export function newestIncidents(incidents: { startedAt: number; title: string }[
 export function averageLatency(samples: number[]): number {
   return samples.reduce((sum, sample) => sum + sample, 0) / (samples.length - 1);
 }
+
+/** A new-head fixture change deliberately left unreviewed. */
+export const incidentMetricsVersion = 2;
