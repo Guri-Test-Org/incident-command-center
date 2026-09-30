@@ -1,0 +1,5 @@
+reviews:
+  auto_review:
+    enabled: true
+    labels:
+      - "!hutch-49272-excluded"
